@@ -1,1 +1,58 @@
+name: pop
 
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    env:
+      PY_COLORS: "1"
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 20
+      fail-fast: false
+      matrix:
+        rangeIndex: ["975 980 1", "975 980 2", "975 980 3", "975 980 4", "975 980 5", "975 980 6", "975 980 7", "980 985 8", "980 985 9", "980 985 10", "980 985 11", "980 985 12", "980 985 13", "980 985 14", "985 990 15", "985 990 16", "985 990 17", "985 990 18", "985 990 19", "985 990 20", "985 990 21"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Add Dependencies
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+    - name: Install Depedencies
+      run: |
+        python -m ensurepip --upgrade
+        python -m pip install --upgrade pip wheel setuptools
+        python -m pip install -r requirements.txt
+        sudo apt install -y google-chrome-stable
+        seleniumbase install chromedriver
+        sudo apt install -y xvfb
+    - name: Install OpenVPN
+      run: |
+        sudo apt update
+        sudo apt install -y openvpn openvpn-systemd-resolved
+        chmod +x ./setup.sh && ./setup.sh
+        sleep 5
+        ls -l
+    - name: Your current IP address
+      run: curl -s http://ipecho.net/plain
+    - name: Connect to VPN
+      uses: "kota65535/github-openvpn-connect-action@v2"
+      with:
+        config_file: ./con.ovpn
+        echo_config: "false"
+        username: "p3687811"
+        password: "2or9ArCFAf"
+    - name: Your vpn IP address
+      run: curl -s http://ipecho.net/plain
+    - name: Run
+      run: |
+        export DISPLAY=:0
+        /usr/bin/Xvfb :0 -screen 0 1024x768x24 &
+        sleep 5
+        xvfb-run python run-n-login.py ${{ matrix.rangeIndex }}
+    - name: done
+      run: exit
